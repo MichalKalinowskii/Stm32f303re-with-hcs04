@@ -42,6 +42,9 @@
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+DMA_HandleTypeDef hdma_tim1_ch1;
+DMA_HandleTypeDef hdma_tim2_ch1;
 
 UART_HandleTypeDef huart2;
 
@@ -70,25 +73,24 @@ struct Buffer buffer_R = {0,0,512,buffer_R_tab};
 #define frameMinSize 10
 #define frameMin 8
 const char device_address[4] = "STM";
-char wrong_[18];
+char wrong[18];
+uint16_t DMA_PWM_In[512];
+uint16_t DMA_PWM_Out[512];
 
-/* ===== Receive ===== */
 volatile uint8_t buf_RX[512];
-volatile uint16_t IDX_RX_EMPTY;
-volatile uint16_t IDX_RX_BUSY;
-/* ===== Transmit ===== */
-volatile uint8_t buf_TX[512];
-volatile uint16_t IDX_TX_EMPTY;
-volatile uint16_t IDX_TX_BUSY;
-struct us_sensor_str distance_sensor;
+volatile uint16_t ;
+
+struct us_sensor_str distance_sIDX_RX_EMPTYensor;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 int16_t code_Command(char *src, char *dst, uint8_t com_len);
 uint8_t CRC_100(char *src, uint8_t len);
@@ -129,13 +131,17 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_IT(&huart2, &buf_RX[IDX_RX_EMPTY], 1);
   hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
+  HAL_DMA_Init(&hdma_tim1_ch1);
+  //HAL_TIM_IC_Start_DMA(&htim1, &hdma_tim1_ch1, &dmaDestination, 10);
 
   /* USER CODE END 2 */
 
@@ -198,10 +204,11 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_TIM1
-                              |RCC_PERIPHCLK_TIM2;
+                              |RCC_PERIPHCLK_TIM2|RCC_PERIPHCLK_TIM34;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLK_HCLK;
   PeriphClkInit.Tim2ClockSelection = RCC_TIM2CLK_HCLK;
+  PeriphClkInit.Tim34ClockSelection = RCC_TIM34CLK_HCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -231,7 +238,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 72-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 62500;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -304,7 +311,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 36-1;
+  htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 62500-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -329,10 +336,10 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 10;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -340,6 +347,65 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -375,6 +441,25 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 
@@ -417,11 +502,15 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-uint32_t GetSurvey()
+void GetSurvey()
 {
 	uint32_t echo_us = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
 	distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
-	return distance_sensor.distance_cm;
+	//HAL_DMA_Start(&hdma_tim1_ch1, &distance_sensor.distance_cm, &dmaDestination, 10);
+	//while (HAL_DMA_PollForTransfer(&hdma_tim1_ch1, HAL_DMA_FULL_TRANSFER, 100) != HAL_OK)
+	//{
+	//	__NOP();
+	//}
 }
 
 uint8_t USART_keyboardhit(){
@@ -580,8 +669,8 @@ uint8_t analizeFrame(char *bufferedFrame, int16_t len, char *sender_add) {
 		//Sprawdzenie konkretnych wartości CRC
 		intCRC = atoi(stringCRC);
 		if ((crc_temp = CRC_100(bufferedFrame, commandLength)) != intCRC) {
-			sprintf(wrong_, "WRONG_CRC_%02d;", crc_temp);
-			sendFrame(sender_add, wrong_, strlen(wrong_));
+			sprintf(wrong, "WRONG_CRC_%02d;", crc_temp);
+			sendFrame(sender_add, wrong, strlen(wrong));
 			return 0;
 		}
 		return 1;
@@ -661,9 +750,9 @@ uint8_t CRC_100(char *src, uint8_t len) {
 
 void analizeCommend(char* com, uint8_t len, char* sender_add) {
 	if (strncmp(com,"GetSurvey()", (unsigned)11) == 0) {
-		uint32_t distance = GetSurvey();
+		GetSurvey();
 		char stringDistance[20];
-		sprintf(stringDistance, "%lu", (unsigned long)distance);
+		//sprintf(stringDistance, "%lu", (unsigned long)dmaDestination);
 		strcat(stringDistance, "cm");
 		sendFrame(sender_add, stringDistance, strlen(stringDistance));
 	}
