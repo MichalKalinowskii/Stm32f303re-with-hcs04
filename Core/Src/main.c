@@ -43,7 +43,7 @@
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 DMA_HandleTypeDef hdma_tim1_ch1;
-DMA_HandleTypeDef hdma_tim2_ch3;
+DMA_HandleTypeDef  hdma_tim2_ch3;
 
 UART_HandleTypeDef huart2;
 
@@ -101,7 +101,16 @@ int16_t getFrame(char *bufferedFrame);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	if(TIM1 == htim->Instance)
+	{
+		uint32_t echo_us = pwmInResult[0];
 
+//		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+		distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -140,8 +149,10 @@ int main(void)
 
   HAL_UART_Receive_IT(&huart2, &buf_RX[IDX_RX_EMPTY], 1);
   HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, (uint32_t *)puls, 1);
-  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmInResult, 1);
+  //HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmInResult, 1);
   hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
+  HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);  // Enable PWM input capture with interrupts
+  HAL_DMA_Start_IT(&hdma_tim1_ch1, (uint32_t)&TIM3->CCR1, (uint32_t)pwmInResult, 1);
 
   /* USER CODE END 2 */
 
@@ -442,16 +453,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-	if(TIM1 == htim->Instance)
-	{
-		uint32_t echo_us = pwmInResult[0];
 
-//		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-		distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
-	}
-}
 
 void GetSurvey()
 {
