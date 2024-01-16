@@ -43,6 +43,7 @@
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 DMA_HandleTypeDef hdma_tim1_ch1;
+DMA_HandleTypeDef hdma_tim2_ch3;
 
 UART_HandleTypeDef huart2;
 
@@ -79,6 +80,9 @@ volatile uint8_t buf_RX[512];
 
 struct us_sensor_str distance_sensor;
 volatile uint16_t IDX_RX_EMPTY;
+
+volatile uint32_t puls[1] = {10};
+volatile uint32_t pwmInResult[1];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -135,9 +139,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_IT(&huart2, &buf_RX[IDX_RX_EMPTY], 1);
+  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, (uint32_t *)puls, 1);
+  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmInResult, 1);
   hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
-  HAL_DMA_Init(&hdma_tim1_ch1);
-  //HAL_TIM_IC_Start_DMA(&htim1, &hdma_tim1_ch1, &dmaDestination, 10);
 
   /* USER CODE END 2 */
 
@@ -233,7 +237,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 72-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 62500-1;
+  htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -331,7 +335,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 10;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
@@ -390,6 +394,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   /* DMA1_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
@@ -434,6 +441,17 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	if(TIM1 == htim->Instance)
+	{
+		uint32_t echo_us = pwmInResult[0];
+
+//		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+		distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
+	}
+}
 
 void GetSurvey()
 {

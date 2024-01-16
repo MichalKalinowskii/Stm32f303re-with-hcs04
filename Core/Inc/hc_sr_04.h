@@ -13,6 +13,6 @@ struct us_sensor_str
 };
 
 void hc_sr04_init(struct us_sensor_str *us_sensor, TIM_HandleTypeDef *htim_echo, TIM_HandleTypeDef *htim_trig, TIM_Channel channel);
-uint32_t hc_sr04_convert_us_to_cm(uint32_t distance_us);
+uint32_t hc_sr_04_convert_us_to_cm(uint32_t distance_us);
 
 #endif /* INC_HC_SR04_H_ */
