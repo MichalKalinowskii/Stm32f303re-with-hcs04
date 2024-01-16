@@ -23,9 +23,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, DATA
   9 .ccmram       00000000  10000000  10000000  00020080  2**0
                   CONTENTS
- 10 .bss          00000a94  20000080  20000080  00020080  2**2
+ 10 .bss          00000a90  20000080  20000080  00020080  2**2
                   ALLOC
- 11 ._user_heap_stack 00000604  20000b14  20000b14  00020080  2**0
+ 11 ._user_heap_stack 00000600  20000b10  20000b10  00020080  2**0
                   ALLOC
  12 .ARM.attributes 00000030  00000000  00000000  00020080  2**0
                   CONTENTS, READONLY
@@ -41,13 +41,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  18 .debug_macro  00020630  00000000  00000000  000345e6  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line   00011f9d  00000000  00000000  00054c16  2**0
+ 19 .debug_line   00011eda  00000000  00000000  00054c16  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_str    000c8b6b  00000000  00000000  00066bb3  2**0
+ 20 .debug_str    000c8b6c  00000000  00000000  00066af0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_frame  00003ef4  00000000  00000000  0012f720  2**2
+ 21 .debug_frame  00003ef4  00000000  00000000  0012f65c  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_line_str 00000060  00000000  00000000  00133614  2**0
+ 22 .debug_line_str 00000061  00000000  00000000  00133550  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -324,12 +324,12 @@ int main(void)
  8000396:	f000 fe6f 	bl	8001078 <analizeCommend>
 	  if ((length = getFrame(bFrame)) != -1) {
  800039a:	e7da      	b.n	8000352 <main+0x5a>
- 800039c:	200008a4 	.word	0x200008a4
+ 800039c:	200008b4 	.word	0x200008b4
  80003a0:	200006a4 	.word	0x200006a4
  80003a4:	20000208 	.word	0x20000208
  80003a8:	200000e8 	.word	0x200000e8
  80003ac:	2000009c 	.word	0x2000009c
- 80003b0:	200008a8 	.word	0x200008a8
+ 80003b0:	200008a4 	.word	0x200008a4
  80003b4:	20000180 	.word	0x20000180
  80003b8:	08007418 	.word	0x08007418
 
@@ -1277,7 +1277,7 @@ void GetSurvey()
  8000948:	bd80      	pop	{r7, pc}
  800094a:	bf00      	nop
  800094c:	2000009c 	.word	0x2000009c
- 8000950:	200008a8 	.word	0x200008a8
+ 8000950:	200008a4 	.word	0x200008a4
 
 08000954 <USART_keyboardhit>:
 
@@ -1792,8 +1792,8 @@ int16_t getFrame(char *bufferedFrame) {
  8000cc8:	46bd      	mov	sp, r7
  8000cca:	bd80      	pop	{r7, pc}
  8000ccc:	20000020 	.word	0x20000020
- 8000cd0:	200008b8 	.word	0x200008b8
- 8000cd4:	200008bc 	.word	0x200008bc
+ 8000cd0:	200008b6 	.word	0x200008b6
+ 8000cd4:	200008b8 	.word	0x200008b8
 
 08000cd8 <analizeFrame>:
 
@@ -3220,8 +3220,8 @@ void *_sbrk(ptrdiff_t incr)
  800152a:	bd80      	pop	{r7, pc}
  800152c:	20010000 	.word	0x20010000
  8001530:	00000400 	.word	0x00000400
- 8001534:	200009c4 	.word	0x200009c4
- 8001538:	20000b18 	.word	0x20000b18
+ 8001534:	200009c0 	.word	0x200009c0
+ 8001538:	20000b10 	.word	0x20000b10
 
 0800153c <SystemInit>:
   * @brief  Setup the microcontroller system
@@ -3347,7 +3347,7 @@ LoopForever:
   ldr r2, =_sbss
  80015a8:	20000080 	.word	0x20000080
   ldr r4, =_ebss
- 80015ac:	20000b14 	.word	0x20000b14
+ 80015ac:	20000b10 	.word	0x20000b10
 
 080015b0 <ADC1_2_IRQHandler>:
  * @retval : None
@@ -3492,7 +3492,7 @@ __weak void HAL_IncTick(void)
  800165c:	4770      	bx	lr
  800165e:	bf00      	nop
  8001660:	2000002c 	.word	0x2000002c
- 8001664:	200009c8 	.word	0x200009c8
+ 8001664:	200009c4 	.word	0x200009c4
 
 08001668 <HAL_GetTick>:
   * @note   The function is declared as __Weak  to be overwritten  in case of other 
@@ -3512,7 +3512,7 @@ __weak uint32_t HAL_GetTick(void)
  8001674:	f85d 7b04 	ldr.w	r7, [sp], #4
  8001678:	4770      	bx	lr
  800167a:	bf00      	nop
- 800167c:	200009c8 	.word	0x200009c8
+ 800167c:	200009c4 	.word	0x200009c4
 
 08001680 <__NVIC_SetPriorityGrouping>:
            In case of a conflict between priority grouping and available
@@ -16865,7 +16865,7 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
  8006c0a:	e7ca      	b.n	8006ba2 <_free_r+0x26>
  8006c0c:	b003      	add	sp, #12
  8006c0e:	bd30      	pop	{r4, r5, pc}
- 8006c10:	20000b0c 	.word	0x20000b0c
+ 8006c10:	20000b08 	.word	0x20000b08
 
 08006c14 <sbrk_aligned>:
  8006c14:	b570      	push	{r4, r5, r6, lr}
@@ -16893,7 +16893,7 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
  8006c48:	f04f 34ff 	mov.w	r4, #4294967295
  8006c4c:	4620      	mov	r0, r4
  8006c4e:	bd70      	pop	{r4, r5, r6, pc}
- 8006c50:	20000b10 	.word	0x20000b10
+ 8006c50:	20000b0c 	.word	0x20000b0c
 
 08006c54 <_malloc_r>:
  8006c54:	e92d 43f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, r9, lr}
@@ -17004,19 +17004,19 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
  8006d4a:	605b      	str	r3, [r3, #4]
  8006d4c:	deff      	udf	#255	; 0xff
  8006d4e:	bf00      	nop
- 8006d50:	20000b0c 	.word	0x20000b0c
+ 8006d50:	20000b08 	.word	0x20000b08
 
 08006d54 <__malloc_lock>:
  8006d54:	4801      	ldr	r0, [pc, #4]	; (8006d5c <__malloc_lock+0x8>)
  8006d56:	f7ff bf01 	b.w	8006b5c <__retarget_lock_acquire_recursive>
  8006d5a:	bf00      	nop
- 8006d5c:	20000b08 	.word	0x20000b08
+ 8006d5c:	20000b04 	.word	0x20000b04
 
 08006d60 <__malloc_unlock>:
  8006d60:	4801      	ldr	r0, [pc, #4]	; (8006d68 <__malloc_unlock+0x8>)
  8006d62:	f7ff befc 	b.w	8006b5e <__retarget_lock_release_recursive>
  8006d66:	bf00      	nop
- 8006d68:	20000b08 	.word	0x20000b08
+ 8006d68:	20000b04 	.word	0x20000b04
 
 08006d6c <__ssputs_r>:
  8006d6c:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
@@ -17671,7 +17671,7 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
  8007386:	b103      	cbz	r3, 800738a <_sbrk_r+0x1a>
  8007388:	6023      	str	r3, [r4, #0]
  800738a:	bd38      	pop	{r3, r4, r5, pc}
- 800738c:	20000b04 	.word	0x20000b04
+ 800738c:	20000b00 	.word	0x20000b00
 
 08007390 <_realloc_r>:
  8007390:	e92d 41f0 	stmdb	sp!, {r4, r5, r6, r7, r8, lr}
