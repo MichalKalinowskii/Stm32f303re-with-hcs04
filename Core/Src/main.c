@@ -55,31 +55,28 @@ struct Buffer{
 	int len;
 	uint8_t* tab;
 };
-
 uint8_t buffer_T_tab[512];
 uint8_t buffer_R_tab[512];
-
 struct Buffer buffer_T = {0,0,512,buffer_T_tab};
 struct Buffer buffer_R = {0,0,512,buffer_R_tab};
 
-#define codingChar 0x60
-#define startFrame 0x7B
-#define endFrame 0x7D
-#define codeStartcharFromFrame 0x5B
-#define codeEndcharFromFrame 0x5D
+
+#define codingChar 0x60 // `
+#define startFrame 0x7B // {
+#define endFrame 0x7D // }
+#define codeStartcharFromFrame 0x5B // [
+#define codeEndcharFromFrame 0x5D // ]
 
 #define frameMaxSize 265
 #define frameMinSize 10
 #define frameMin 8
 const char device_address[4] = "STM";
 char wrong[18];
+
 uint16_t DMA_PWM_In[512];
 uint16_t DMA_PWM_Out[512];
 
-volatile uint8_t buf_RX[512];
-
 struct us_sensor_str distance_sensor;
-volatile uint16_t IDX_RX_EMPTY;
 
 volatile uint32_t puls[1] = {10};
 volatile uint32_t pwmInResult[1];
@@ -147,7 +144,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_UART_Receive_IT(&huart2, &buf_RX[IDX_RX_EMPTY], 1);
+  HAL_UART_Receive_IT(&huart2, &buffer_R.tab[buffer_R.empty], 1);
   HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, (uint32_t *)puls, 1);
   //HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmInResult, 1);
   hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
@@ -467,19 +464,19 @@ void GetSurvey()
 }
 
 uint8_t USART_keyboardhit(){
-	if(buffer_R.empty==buffer_R.busy){
+	if(buffer_R.empty == buffer_R.busy){
 		return 0;
 	}
 	return 1;
 }
 
 int8_t USART_getchar(){
-	int16_t znak;
+	int16_t character;
 	if(USART_keyboardhit()){
-		znak = buffer_R.tab[buffer_R.busy];
+		character = buffer_R.tab[buffer_R.busy];
 		buffer_R.busy++;
 		buffer_R.busy %= buffer_R.len;
-		return znak;
+		return character;
 	}
 	else{
 		return -1;
@@ -515,10 +512,10 @@ void USART_fSend(char *msg, ...){
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 	if(huart == &huart2 && buffer_T.busy != buffer_T.empty){
-		uint8_t znak = buffer_T.tab[buffer_T.busy];
+		uint8_t character = buffer_T.tab[buffer_T.busy];
 		buffer_T.busy++;
 		buffer_T.busy %= buffer_T.len;
-		HAL_UART_Transmit_IT(&huart2,&znak,1);
+		HAL_UART_Transmit_IT(&huart2,&character,1);
 	}
 }
 
