@@ -43,7 +43,7 @@
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 DMA_HandleTypeDef hdma_tim1_ch1;
-DMA_HandleTypeDef  hdma_tim2_ch3;
+DMA_HandleTypeDef hdma_tim2_ch3;
 
 UART_HandleTypeDef huart2;
 
@@ -78,7 +78,7 @@ uint16_t DMA_PWM_Out[512];
 
 struct us_sensor_str distance_sensor;
 
-volatile uint32_t puls[1] = {10};
+volatile uint32_t pulse[1] = {10};
 volatile uint32_t pwmInResult[1];
 /* USER CODE END PV */
 
@@ -102,9 +102,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	if(TIM1 == htim->Instance)
 	{
-		uint32_t echo_us = pwmInResult[0];
-
-//		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+		hdma_tim1_ch1.State = HAL_DMA_STATE_READY;
+		HAL_DMA_Start_IT(&hdma_tim1_ch1, (uint32_t)&TIM1->CCR2, &pwmInResult[0], 1);
+		pwmInResult;
+		uint32_t echo_us = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
 		distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
 	}
 }
@@ -145,11 +146,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_IT(&huart2, &buffer_R.tab[buffer_R.empty], 1);
-  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, (uint32_t *)puls, 1);
-  //HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmInResult, 1);
+  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, (uint32_t *)pulse, 1);
   hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
   HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);  // Enable PWM input capture with interrupts
-  HAL_DMA_Start_IT(&hdma_tim1_ch1, (uint32_t)&TIM3->CCR1, (uint32_t)pwmInResult, 1);
+  //HAL_DMA_Start_IT(&hdma_tim1_ch1, (uint32_t)&TIM1->CCR2, &pwmInResult[0], 1);
 
   /* USER CODE END 2 */
 
@@ -163,7 +163,7 @@ int main(void)
   {
 	  if ((length = getFrame(bFrame)) != -1) {
 		 if ((length = analizeFrame(bFrame,length,senderAddress)) != 0) {
-			 analizeCommend(bFrame,length,senderAddress);
+			 analizeCommend(bFrame, length, senderAddress);
 		 }
 	  }
     /* USER CODE END WHILE */
@@ -456,11 +456,6 @@ void GetSurvey()
 {
 	uint32_t echo_us = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
 	distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
-	//HAL_DMA_Start(&hdma_tim1_ch1, &distance_sensor.distance_cm, &dmaDestination, 10);
-	//while (HAL_DMA_PollForTransfer(&hdma_tim1_ch1, HAL_DMA_FULL_TRANSFER, 100) != HAL_OK)
-	//{
-	//	__NOP();
-	//}
 }
 
 uint8_t USART_keyboardhit(){
@@ -592,8 +587,6 @@ uint8_t analizeFrame(char *bufferedFrame, int16_t len, char *sender_add) {
 	if (strncmp(bufferedFrame, device_address, 3) == 0) {
 		//Pobranie i sprawdzenie nadawcy
 		memcpy(sender_add, bufferedFrame + 3, 3);
-		//string null-terminated na końcu
-		sender_add[3]=0;
 		for (i = 0; i < 3; ++i) {
 			if (!((sender_add[i] >= 0x41 && sender_add[i] <= 0x5A)
 					|| (sender_add[i] >= 0x61 && sender_add[i] <= 0x7A))) {
@@ -645,7 +638,7 @@ void sendFrame(char dst[4], char *com, uint8_t com_len) {
 
 	memcpy(frameToSend + 1 + 3 + 3, codeCommand, codeCommandLength);
 
-	//przed zakodowaniem znaków
+	//długość przed zakodowaniem zakodowaniem znaków
 	crc = CRC_100(com, com_len);
 	// 78/10 =7
 	// 7+48 = 55
@@ -692,6 +685,7 @@ uint8_t CRC_100(char *src, uint8_t len) {
 	uint8_t i;
 	uint8_t temp = src[0];
 	for (i = 1; i < len; ++i) {
+		//xor, ponieważ or da nam same 1, and same 0
 		temp ^= src[i];
 	}
 	temp %= 100;
@@ -699,10 +693,10 @@ uint8_t CRC_100(char *src, uint8_t len) {
 }
 
 void analizeCommend(char* com, uint8_t len, char* sender_add) {
-	if (strncmp(com,"GetSurvey()", (unsigned)11) == 0) {
-		GetSurvey();
+	if (strncmp(com, "GetSurvey()", (unsigned)11) == 0) {
+		//GetSurvey();
 		char stringDistance[20];
-		//sprintf(stringDistance, "%lu", (unsigned long)dmaDestination);
+		sprintf(stringDistance, "%lu", (unsigned long)distance_sensor.distance_cm);
 		strcat(stringDistance, "cm");
 		sendFrame(sender_add, stringDistance, strlen(stringDistance));
 	}

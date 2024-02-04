@@ -2,7 +2,8 @@
 
 #define HC_SR04_US_TO_CM_CONVERTER	58
 
-void hc_sr_04_init(struct us_sensor_str *us_sensor, TIM_HandleTypeDef *htim_echo, TIM_HandleTypeDef *htim_trig, TIM_Channel trig_channel)
+void hc_sr_04_init(struct us_sensor_str *us_sensor, TIM_HandleTypeDef *htim_echo,
+		TIM_HandleTypeDef *htim_trig, TIM_Channel trig_channel)
 {
 	us_sensor->htim_echo = htim_echo;
 	us_sensor->htim_trig = htim_trig;
