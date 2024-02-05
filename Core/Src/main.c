@@ -79,7 +79,8 @@ uint16_t DMA_PWM_Out[512];
 struct us_sensor_str distance_sensor;
 
 volatile uint32_t pulse[1] = {10};
-volatile uint32_t pwmInResult[1];
+volatile uint32_t pwmInResult_ch1[1];
+volatile uint32_t pwmInResult_ch2[1];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,11 +103,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	if(TIM1 == htim->Instance)
 	{
-		hdma_tim1_ch1.State = HAL_DMA_STATE_READY;
-		HAL_DMA_Start_IT(&hdma_tim1_ch1, (uint32_t)&TIM1->CCR2, &pwmInResult[0], 1);
-		pwmInResult;
+		pwmInResult_ch1;
+		pwmInResult_ch2;
 		uint32_t echo_us = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
-		distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(echo_us);
+		uint32_t echo_us2 = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1);
+		distance_sensor.distance_cm = hc_sr_04_convert_us_to_cm(65535-echo_us2);
 	}
 }
 /* USER CODE END 0 */
@@ -147,8 +148,12 @@ int main(void)
 
   HAL_UART_Receive_IT(&huart2, &buffer_R.tab[buffer_R.empty], 1);
   HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, (uint32_t *)pulse, 1);
-  hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
-  HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);  // Enable PWM input capture with interrupts
+  HAL_TIM_IC_Start_DMA(&htim1, TIM_CHANNEL_1, pwmInResult_ch1, 1);
+  //htim1.State = HAL_TIM_STATE_READY;
+  //HAL_TIM_IC_Start_DMA(&htim1, TIM_CHANNEL_2, pwmInResult_ch2, 1);
+  //hc_sr_04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
+  //HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);  // Enable PWM input capture with interrupts
+  //HAL_DMA_Init(&hdma_tim1_ch1);
   //HAL_DMA_Start_IT(&hdma_tim1_ch1, (uint32_t)&TIM1->CCR2, &pwmInResult[0], 1);
 
   /* USER CODE END 2 */
@@ -264,14 +269,14 @@ static void MX_TIM1_Init(void)
   }
   sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
   sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
-  sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
   sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
   sSlaveConfig.TriggerFilter = 0;
   if (HAL_TIM_SlaveConfigSynchro(&htim1, &sSlaveConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -279,7 +284,7 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
   if (HAL_TIM_IC_ConfigChannel(&htim1, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
   {

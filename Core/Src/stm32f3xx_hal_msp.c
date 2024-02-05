@@ -24,8 +24,6 @@
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
-extern DMA_HandleTypeDef hdma_tim1_ch1;
-
 extern DMA_HandleTypeDef hdma_tim2_ch3;
 
 /* Private typedef -----------------------------------------------------------*/
@@ -112,23 +110,6 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     GPIO_InitStruct.Alternate = GPIO_AF6_TIM1;
     HAL_GPIO_Init(Echo_GPIO_Port, &GPIO_InitStruct);
 
-    /* TIM1 DMA Init */
-    /* TIM1_CH1 Init */
-    hdma_tim1_ch1.Instance = DMA1_Channel2;
-    hdma_tim1_ch1.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_tim1_ch1.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_tim1_ch1.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_tim1_ch1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    hdma_tim1_ch1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_tim1_ch1.Init.Mode = DMA_CIRCULAR;
-    hdma_tim1_ch1.Init.Priority = DMA_PRIORITY_HIGH;
-    if (HAL_DMA_Init(&hdma_tim1_ch1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(htim_base,hdma[TIM_DMA_ID_CC1],hdma_tim1_ch1);
-
     /* TIM1 interrupt Init */
     HAL_NVIC_SetPriority(TIM1_CC_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
@@ -164,6 +145,17 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE BEGIN TIM2_MspInit 1 */
 
   /* USER CODE END TIM2_MspInit 1 */
+  }
+  else if(htim_base->Instance==TIM4)
+  {
+  /* USER CODE BEGIN TIM4_MspInit 0 */
+
+  /* USER CODE END TIM4_MspInit 0 */
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM4_CLK_ENABLE();
+  /* USER CODE BEGIN TIM4_MspInit 1 */
+
+  /* USER CODE END TIM4_MspInit 1 */
   }
 
 }
@@ -215,9 +207,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
     */
     HAL_GPIO_DeInit(Echo_GPIO_Port, Echo_Pin);
 
-    /* TIM1 DMA DeInit */
-    HAL_DMA_DeInit(htim_base->hdma[TIM_DMA_ID_CC1]);
-
     /* TIM1 interrupt DeInit */
     HAL_NVIC_DisableIRQ(TIM1_CC_IRQn);
   /* USER CODE BEGIN TIM1_MspDeInit 1 */
@@ -237,6 +226,17 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE BEGIN TIM2_MspDeInit 1 */
 
   /* USER CODE END TIM2_MspDeInit 1 */
+  }
+  else if(htim_base->Instance==TIM4)
+  {
+  /* USER CODE BEGIN TIM4_MspDeInit 0 */
+
+  /* USER CODE END TIM4_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM4_CLK_DISABLE();
+  /* USER CODE BEGIN TIM4_MspDeInit 1 */
+
+  /* USER CODE END TIM4_MspDeInit 1 */
   }
 
 }
